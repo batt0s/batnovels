@@ -15,6 +15,7 @@ type Project struct {
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 	Title     string         `gorm:"not null;size:256;" json:"title"`
 	Synopsis  string         `gorm:"not null;size:1024;" json:"synopsis"`
+	Author    string         `gorm:"not null;size:128;" json:"author"`
 	Status    string         `gorm:"not null;size:64;" json:"status"`
 	Tags      string         `gorm:"not null;size:256;" json:"tags"` // , ile ayırarak
 	Views     int32          `json:"views"`

@@ -86,11 +86,7 @@ func (repo SqlUserRepo) Add(ctx context.Context, user User) error {
 			return ErrorInvalidUser
 		}
 		user.ID = uuid.New().String()
-		hash, err := user.generateHash()
-		if err != nil {
-			return err
-		}
-		user.Password = hash
+		user.SetPassword(user.Password)
 		result := repo.db.Create(&user)
 		return result.Error
 	}
@@ -133,10 +129,12 @@ func (u User) IsValid() bool {
 	return true
 }
 
-func (u User) generateHash() (string, error) {
+// does not save with new password
+func (u *User) SetPassword(passwd string) error {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return "", err
+		return err
 	}
-	return string(bytes), nil
+	u.Password = string(bytes)
+	return nil
 }

@@ -15,6 +15,8 @@ type Chapter struct {
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 	Title     string         `gorm:"not null;size:128;" json:"title"`
 	Content   string         `gorm:"type:text;" json:"content"`
+	ProjectID string  		 `json:"project_id"`
+	Project   Project 		 `gorm:"foreignKey:ProjectID"`
 }
 
 type ChapterRepo interface {
