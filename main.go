@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+
+	"github.com/batt0s/batnovels/controllers"
 )
 
 func main() {
@@ -16,8 +18,9 @@ func main() {
 	}
 
 	app := controllers.App{
-		appMode: appMode,
+		AppMode: appMode,
 	}
+	app.Init()
 
 	// Gracefully Shutdown
 	shutdown := make(chan struct{})
@@ -26,7 +29,8 @@ func main() {
 		signal.Notify(sigint, os.Interrupt)
 		<-sigint
 		log.Println("Interrupt signal received. Shutting down.")
-		err := app.Server.Shutdown(context.WithTimeout(context.Background(), 60))
+		ctx, _ := context.WithTimeout(context.Background(), 60)
+		err := app.Server.Shutdown(ctx)
 		if err != nil {
 			log.Println("HTTP Server shutdown error: \n", err.Error())
 		}
