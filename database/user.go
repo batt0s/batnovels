@@ -113,7 +113,7 @@ func (repo SqlUserRepo) Delete(ctx context.Context, user User) error {
 }
 
 func (u User) IsValid() bool {
-	if len(u.Username) > 256 || len(u.Username) < 8 {
+	if len(u.Username) > 256 || len(u.Username) < 4 {
 		return false
 	}
 	if len(u.Email) > 256 {

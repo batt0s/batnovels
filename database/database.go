@@ -30,14 +30,14 @@ func New(driver string, source string, config *gorm.Config) (*Database, error) {
 		log.Println("Failed to connect database.")
 		return nil, err
 	}
-	if err := db.db.AutoMigrate(&User{}, &Project{}, &Chapter{}, &Comment{}); err != nil {
+	if err := db.db.AutoMigrate(&User{}, &Project{}, &Chapter{}); err != nil {
 		log.Println("Failed to migrate database.")
 		return nil, err
 	}
 	db.Users = NewSqlUserRepo(db.db)
 	db.Projects = NewSqlProjectRepo(db.db)
 	db.Chapters = NewSqlChapterRepo(db.db)
-	db.Comments = NewSqlCommentRepo(db.db)
+	//db.Comments = NewSqlCommentRepo(db.db)
 	return db, nil
 }
 
