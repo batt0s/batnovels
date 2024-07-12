@@ -36,6 +36,14 @@ func (app *App) Init() error {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(120 * time.Second))
 
+	r.Route("/api", func(api chi.Router) {
+		api.Get("/project", app.ProjectList)
+		api.Get("/project/{id}", app.ProjectDetail)
+		api.Get("/project/{id}/chapters", app.ChapterList)
+		api.Post("/project", app.ProjectAdd)
+		api.Post("/project/{id}/chapters", app.ChapterAdd)
+	})
+
 	var host, port string
 	host = strings.TrimSpace(os.Getenv("HOST"))
 	if host == "" {
