@@ -15,8 +15,8 @@ type Chapter struct {
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 	Title     string         `gorm:"not null;size:128;" json:"title"`
 	Content   string         `gorm:"type:text;" json:"content"`
-	ProjectID string  		 `json:"project_id"`
-	Project   Project 		 `gorm:"foreignKey:ProjectID"`
+	ProjectID string         `json:"project_id"`
+	Project   Project        `gorm:"foreignKey:ProjectID"`
 }
 
 type ChapterRepo interface {
@@ -24,6 +24,7 @@ type ChapterRepo interface {
 	Add(ctx context.Context, chapter Chapter) error
 	Update(ctx context.Context, chapter Chapter) error
 	Delete(ctx context.Context, chapter Chapter) error
+	List(ctx context.Context, project_id string) ([]Chapter, error)
 }
 
 type SqlChapterRepo struct {
@@ -78,6 +79,17 @@ func (repo SqlChapterRepo) Delete(ctx context.Context, chapter Chapter) error {
 	default:
 		result := repo.db.Delete(&chapter)
 		return result.Error
+	}
+}
+
+func (repo SqlChapterRepo) List(ctx context.Context, project_id string) ([]Chapter, error) {
+	select {
+	case <-ctx.Done():
+		return []Chapter{}, ErrorOperationCanceled
+	default:
+		var chapters []Chapter
+		result := repo.db.Where("project_id = ?", project_id).Find(&chapters)
+		return chapters, result.Error
 	}
 }
 

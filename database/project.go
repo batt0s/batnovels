@@ -27,6 +27,7 @@ type ProjectRepo interface {
 	Add(ctx context.Context, project Project) error
 	Update(ctx context.Context, project Project) error
 	Delete(ctx context.Context, project Project) error
+	List(ctx context.Context) ([]Project, error)
 }
 
 type SqlProjectRepo struct {
@@ -81,6 +82,17 @@ func (repo SqlProjectRepo) Delete(ctx context.Context, project Project) error {
 	default:
 		result := repo.db.Delete(&project)
 		return result.Error
+	}
+}
+
+func (repo SqlProjectRepo) List(ctx context.Context) ([]Project, error) {
+	select {
+	case <-ctx.Done():
+		return []Project{}, ErrorOperationCanceled
+	default:
+		var projects []Project
+		result := repo.db.Find(&projects)
+		return projects, result.Error
 	}
 }
 
