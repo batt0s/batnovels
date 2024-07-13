@@ -42,14 +42,14 @@ func (app App) ProjectList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app App) ProjectDetail(w http.ResponseWriter, r *http.Request) {
-	project_id := chi.URLParam(r, "id")
-	if project_id == "" {
+	project_slug := chi.URLParam(r, "slug")
+	if project_slug == "" {
 		sendResponse(w, http.StatusBadRequest, nil)
 		return
 	}
 	var project database.Project
 	var err error
-	project, err = app.Database.Projects.Find(context.Background(), project_id)
+	project, err = app.Database.Projects.FindBySlug(context.Background(), project_slug)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			sendResponse(w, http.StatusNotFound, nil)

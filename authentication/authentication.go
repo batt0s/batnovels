@@ -2,6 +2,7 @@ package authentication
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/batt0s/batnovels/database"
@@ -20,6 +21,8 @@ func Authenticate(username, passwd string, users database.UserRepo) (database.Us
 	if err != nil {
 		return user, err
 	}
+	log.Println(user.Password)
+	log.Println(string(bytes))
 	if user.Password != string(bytes) {
 		return user, ErrorIncorrectPassword
 	}

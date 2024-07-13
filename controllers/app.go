@@ -17,6 +17,7 @@ import (
 type App struct {
 	Addr     string
 	AppMode  string
+	Secret   string
 	Router   *chi.Mux
 	Server   http.Server
 	Database *database.Database
@@ -37,11 +38,20 @@ func (app *App) Init() error {
 	r.Use(middleware.Timeout(120 * time.Second))
 
 	r.Route("/api", func(api chi.Router) {
-		api.Get("/project", app.ProjectList)
-		api.Get("/project/{id}", app.ProjectDetail)
-		api.Get("/project/{id}/chapters", app.ChapterList)
-		api.Post("/project", app.ProjectAdd)
-		api.Post("/project/{id}/chapters", app.ChapterAdd)
+		api.Route("/user", func(user chi.Router) {
+			user.Post("/login", app.LoginHandler)
+			user.Post("/register", app.RegisterHandler)
+		})
+		api.Route("/project", func(project chi.Router) {
+			project.Get("/", app.ProjectList)
+			project.Post("/", app.ProjectAdd)
+			project.Get("/{slug}", app.ProjectDetail)
+			project.Get("/{slug}/chapters", app.ChapterList)
+			project.Post("/{slug}/chapters", app.ChapterAdd)
+		})
+		api.Route("/chapter", func(chapter chi.Router) {
+			chapter.Get("/{slug}", app.Chapter)
+		})
 	})
 
 	var host, port string
@@ -51,7 +61,7 @@ func (app *App) Init() error {
 	}
 	port = strings.TrimSpace(os.Getenv("PORT"))
 	if port == "" {
-		port = "8080"
+		port = "8090"
 	}
 	addr := host + ":" + port
 

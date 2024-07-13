@@ -4,12 +4,13 @@ import (
 	"context"
 	"time"
 
+	"github.com/batt0s/batnovels/utils"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type Project struct {
-	ID        string         `gorm:"type:uuid;primary_key;"`
+	ID        string         `gorm:"type:uuid;primary_key;" json:"id"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index"`
@@ -20,10 +21,12 @@ type Project struct {
 	Tags      string         `gorm:"not null;size:256;" json:"tags"` // , ile ayırarak
 	Views     int32          `json:"views"`
 	Image     string         `json:"image"`
+	Slug      string         `gorm:"not null;unique;size:128;;" json:"slug"`
 }
 
 type ProjectRepo interface {
 	Find(ctx context.Context, id string) (Project, error)
+	FindBySlug(ctx context.Context, slug string) (Project, error)
 	Add(ctx context.Context, project Project) error
 	Update(ctx context.Context, project Project) error
 	Delete(ctx context.Context, project Project) error
@@ -51,6 +54,17 @@ func (repo SqlProjectRepo) Find(ctx context.Context, id string) (Project, error)
 	}
 }
 
+func (repo SqlProjectRepo) FindBySlug(ctx context.Context, slug string) (Project, error) {
+	select {
+	case <-ctx.Done():
+		return Project{}, ErrorOperationCanceled
+	default:
+		var project Project
+		result := repo.db.First(&project, "slug = ?", slug)
+		return project, result.Error
+	}
+}
+
 func (repo SqlProjectRepo) Add(ctx context.Context, project Project) error {
 	select {
 	case <-ctx.Done():
@@ -60,6 +74,7 @@ func (repo SqlProjectRepo) Add(ctx context.Context, project Project) error {
 			return ErrorInvalidProject
 		}
 		project.ID = uuid.New().String()
+		project.Slug = utils.Slugify(project.Title)
 		result := repo.db.Create(&project)
 		return result.Error
 	}
