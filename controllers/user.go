@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/batt0s/batnovels/authentication"
 	"github.com/batt0s/batnovels/database"
@@ -23,7 +24,28 @@ type RegisterRequestBody struct {
 	Password string `json:"password"`
 }
 
-func (app App) RegisterHandler(w http.ResponseWriter, r *http.Request) {
+// JWT tokendeki user objesini çekmek için
+func userContextBody(users database.UserRepo, ctx context.Context) (database.User, error) {
+	var user database.User
+	var err error
+	_, claims, err := jwtauth.FromContext(ctx)
+	if err != nil {
+		return user, err
+	}
+	username := claims["user"].(string)
+	if username == "" {
+		return user, errors.New("no username in claims")
+	}
+
+	user, err = users.FindByUsername(context.Background(), username)
+	if err != nil {
+		return user, err
+	}
+
+	return user, nil
+}
+
+func (app *App) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := getRequestBody[RegisterRequestBody](w, r)
 	if err != nil {
 		var mr *malformedRequest
@@ -50,7 +72,7 @@ func (app App) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	sendResponse(w, http.StatusOK, nil)
 }
 
-func (app App) LoginHandler(w http.ResponseWriter, r *http.Request) {
+func (app *App) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := getRequestBody[LoginRequestBody](w, r)
 	if err != nil {
 		var mr *malformedRequest
@@ -68,11 +90,14 @@ func (app App) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		sendResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	tokenAuth := jwtauth.New("HS256", []byte(app.Secret), nil)
-	claims := map[string]interface{}{"username": user.Username}
-	_, tokenString, err := tokenAuth.Encode(claims)
+	claims := map[string]interface{}{
+		"authorized": true,
+		"user":       user.Username,
+		"exp":        time.Now().Add(30 * 24 * time.Hour).Unix(),
+	}
+	_, tokenString, err := app.AuthToken.Encode(claims)
 	if err != nil {
-		sendResponse(w, http.StatusInternalServerError, "Token generation error")
+		sendResponse(w, http.StatusInternalServerError, map[string]string{"error": "token generation error"})
 		log.Println(err)
 		return
 	}

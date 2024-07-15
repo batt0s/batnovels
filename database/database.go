@@ -13,7 +13,7 @@ import (
 )
 
 type Database struct {
-	db *gorm.DB
+	DB *gorm.DB
 
 	Users    UserRepo
 	Projects ProjectRepo
@@ -30,13 +30,13 @@ func New(driver string, source string, config *gorm.Config) (*Database, error) {
 		log.Println("Failed to connect database.")
 		return nil, err
 	}
-	if err := db.db.AutoMigrate(&User{}, &Project{}, &Chapter{}); err != nil {
+	if err := db.DB.AutoMigrate(&User{}, &Project{}, &Chapter{}); err != nil {
 		log.Println("Failed to migrate database.")
 		return nil, err
 	}
-	db.Users = NewSqlUserRepo(db.db)
-	db.Projects = NewSqlProjectRepo(db.db)
-	db.Chapters = NewSqlChapterRepo(db.db)
+	db.Users = NewSqlUserRepo(db.DB)
+	db.Projects = NewSqlProjectRepo(db.DB)
+	db.Chapters = NewSqlChapterRepo(db.DB)
 	//db.Comments = NewSqlCommentRepo(db.db)
 	return db, nil
 }
@@ -67,7 +67,7 @@ func (db *Database) connect_postgres(source string, config *gorm.Config) error {
 	if err != nil {
 		return err
 	}
-	db.db = gdb
+	db.DB = gdb
 	return nil
 }
 
@@ -77,6 +77,6 @@ func (db *Database) connect_sqlite(source string, config *gorm.Config) error {
 	if err != nil {
 		return err
 	}
-	db.db = gdb
+	db.DB = gdb
 	return nil
 }

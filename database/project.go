@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/batt0s/batnovels/utils"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -13,7 +12,7 @@ type Project struct {
 	ID        string         `gorm:"type:uuid;primary_key;" json:"id"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	Title     string         `gorm:"not null;size:256;" json:"title"`
 	Synopsis  string         `gorm:"not null;size:1024;" json:"synopsis"`
 	Author    string         `gorm:"not null;size:128;" json:"author"`
@@ -27,10 +26,10 @@ type Project struct {
 type ProjectRepo interface {
 	Find(ctx context.Context, id string) (Project, error)
 	FindBySlug(ctx context.Context, slug string) (Project, error)
-	Add(ctx context.Context, project Project) error
-	Update(ctx context.Context, project Project) error
+	Add(ctx context.Context, project Project) (Project, error)
+	Update(ctx context.Context, project Project) (Project, error)
 	Delete(ctx context.Context, project Project) error
-	List(ctx context.Context) ([]Project, error)
+	List(ctx context.Context, limit int, offset int, orderby string) ([]Project, error)
 }
 
 type SqlProjectRepo struct {
@@ -65,28 +64,28 @@ func (repo SqlProjectRepo) FindBySlug(ctx context.Context, slug string) (Project
 	}
 }
 
-func (repo SqlProjectRepo) Add(ctx context.Context, project Project) error {
+func (repo SqlProjectRepo) Add(ctx context.Context, project Project) (Project, error) {
 	select {
 	case <-ctx.Done():
-		return ErrorOperationCanceled
+		return project, ErrorOperationCanceled
 	default:
 		if !project.IsValid() {
-			return ErrorInvalidProject
+			return project, ErrorInvalidProject
 		}
 		project.ID = uuid.New().String()
-		project.Slug = utils.Slugify(project.Title)
+		project.Slug = Slugify(project.Title)
 		result := repo.db.Create(&project)
-		return result.Error
+		return project, result.Error
 	}
 }
 
-func (repo SqlProjectRepo) Update(ctx context.Context, project Project) error {
+func (repo SqlProjectRepo) Update(ctx context.Context, project Project) (Project, error) {
 	select {
 	case <-ctx.Done():
-		return ErrorOperationCanceled
+		return project, ErrorOperationCanceled
 	default:
 		result := repo.db.Save(&project)
-		return result.Error
+		return project, result.Error
 	}
 }
 
@@ -100,13 +99,13 @@ func (repo SqlProjectRepo) Delete(ctx context.Context, project Project) error {
 	}
 }
 
-func (repo SqlProjectRepo) List(ctx context.Context) ([]Project, error) {
+func (repo SqlProjectRepo) List(ctx context.Context, limit int, offset int, orderby string) ([]Project, error) {
 	select {
 	case <-ctx.Done():
 		return []Project{}, ErrorOperationCanceled
 	default:
 		var projects []Project
-		result := repo.db.Find(&projects)
+		result := repo.db.Limit(limit).Offset(offset).Order(orderby).Find(&projects)
 		return projects, result.Error
 	}
 }
