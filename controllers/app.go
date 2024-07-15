@@ -10,6 +10,7 @@ import (
 	"github.com/batt0s/batnovels/database"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/go-chi/jwtauth/v5"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -54,6 +55,11 @@ func (app *App) Init() error {
 	tokenAuth := jwtauth.New("HS256", []byte(secret), nil)
 
 	r := chi.NewRouter()
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"https://*", "http://*"},
+		AllowedMethods: []string{"GET", "POST"},
+	}))
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(120 * time.Second))
