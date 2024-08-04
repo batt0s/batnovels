@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -20,6 +21,24 @@ type ChapterRequestBody struct {
 	Content   string    `json:"content"`
 	ProjectID string    `json:"project_id"`
 	Slug      string    `json:"slug"`
+    TimeAgo   string    `json:"time_ago"`
+}
+
+func timeAgo(t time.Time) string {
+	now := time.Now()
+	duration := now.Sub(t)
+
+	if duration.Hours() < 24 {
+		if duration.Minutes() < 60 {
+			if duration.Seconds() < 60 {
+				return fmt.Sprintf("%.0f seconds ago", duration.Seconds())
+			}
+			return fmt.Sprintf("%.0f minutes ago", duration.Minutes())
+		}
+		return fmt.Sprintf("%.0f hours ago", duration.Hours())
+	}
+	days := int(duration.Hours() / 24)
+	return fmt.Sprintf("%d days ago", days)
 }
 
 func (app *App) ChapterList(w http.ResponseWriter, r *http.Request) {
@@ -50,6 +69,7 @@ func (app *App) ChapterList(w http.ResponseWriter, r *http.Request) {
 			Content:   chapter.Content[:61] + "...",
 			ProjectID: chapter.ProjectID,
 			Slug:      chapter.Slug,
+            TimeAgo: timeAgo(chapter.CreatedAt),
 		}
 		requestBodies = append(requestBodies, requestBody)
 	}
